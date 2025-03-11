@@ -1,0 +1,2014 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Gregory Vander Vinne" />
+
+<meta name="date" content="2025-03-11" />
+
+<title>Exploring The Use of TidyText and LLMs to Understand Amazon’s Annual Reports</title>
+
+<script src="site_libs/header-attrs-2.21/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Gregory Vander Vinne</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Tidy Tuesday Contributions
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="Tidy_Tuesday_2024.html">2024</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Football Graphs
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="keepers_2022_23_ggirafe.html">Individual Goalkeeper Performance 2022-23</a>
+    </li>
+    <li>
+      <a href="Sweeper_Keepers.html">Sweeper Keeping in Different Leagues</a>
+    </li>
+    <li>
+      <a href="Footballer_Nationalities.html">Where are Footballers From?</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Maps
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="Pop_Density_Maps.html">Population Density Maps</a>
+    </li>
+    <li>
+      <a href="Footballer_Nationalities.html">Where are Footballers From?</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Monte Carlo Simulations
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="Comparing-CS-with-Gardner.html">Comparing Two Modern Diff-in-Diff Methods</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Text Mining and LLMs
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="Text-Mining-Amazon-Budgets.html">Using Text Mining and LLMs To Analyze Amazon Annual reports</a>
+    </li>
+  </ul>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Exploring The Use of TidyText and LLMs to
+Understand Amazon’s Annual Reports</h1>
+<h4 class="author">Gregory Vander Vinne</h4>
+<h4 class="date">2025-03-11</h4>
+
+</div>
+
+
+<pre class="r"><code># Setup ------------------------------------------------------------------------------------
+
+#Clear memory
+rm(list = ls(all=T))
+
+# devtools::install_github(&quot;AlbertRapp/tidychatmodels&quot;)
+
+# Load libraries and install if not installed already
+if (!require(&quot;pacman&quot;)) install.packages(&quot;pacman&quot;)
+pacman::p_load(
+  tidyverse,       # Grammar for data and graphics
+  here,            # Relative file paths
+  tidytext,        # Text analysis in a tidy format
+  arrow,         # Files that are fast to write and read
+  ggrepel,         # Repulsive text labels in ggplot2
+  ggtext,          # Fancy text in ggplot2
+  knitr,           # For kable and other rmarkdown things
+  gridExtra,       # Arrange multiple plots into one
+  colorspace,      # Fancy stuff with colors like darken and lighten
+  ggwordcloud,     # Word clouds with ggplot2
+  tidychatmodels,  # Access large language models directly in R
+  dotenv,          # To create environment variable of API key
+  reticulate       # Use Python code within Rmarkdown
+)
+
+
+#Set some output options
+knitr::opts_chunk$set(include = TRUE, warning = FALSE, message = FALSE, 
+                      fig.width = 10, fig.height = 5)
+
+
+# Amazon Color Palette
+my_pal &lt;- c(&quot;#ff9900&quot;, &quot;#146eb4&quot;, &quot;#232f3e&quot;, &quot;#f2f2f2&quot;, &quot;#000000&quot;)
+
+line_colour = my_pal[3] 
+weak_text = my_pal[3]
+strong_text = my_pal[5]
+back_colour = my_pal[4]
+
+
+# Define my ggplot theme as a funciton to avoid repetitive code
+my_theme &lt;- function(base_size = 18) {
+  theme_minimal(base_size = base_size) +
+  theme(
+    panel.grid = element_blank(),
+    panel.background = element_rect(fill = back_colour,
+                                    color = back_colour),
+    plot.background = element_rect(fill = back_colour, 
+                                   colour = back_colour),
+    plot.caption.position = &quot;plot&quot;,
+    plot.title.position = &quot;plot&quot;,
+    plot.title = element_textbox_simple(size = rel(2),
+                                        # family = main_font,
+                                        color = strong_text,
+                                        margin = margin(4, 0, 10, 4)),
+    plot.subtitle = element_textbox_simple(size = rel(1.25),
+                                           # family = main_font,
+                                           colour = weak_text,
+                                           margin = margin(0, 4, 6, 4)), 
+    axis.title.y = element_text(size = rel(1.2),
+                                # family = main_font,
+                                colour = strong_text, 
+                                margin = margin(0, 6 , 0, 4)),
+    axis.title.x = element_text(size = rel(1.2),
+                                # family = main_font,
+                                colour = strong_text, 
+                                margin = margin(6, 0 , 2, 0)),
+    axis.text = element_text(size = rel(1.1),
+                             # family = main_font,
+                             colour = weak_text, 
+                             margin = margin(0, 0, 0, 6)),
+    plot.caption = element_textbox_simple(size = rel(0.8),
+                                          colour = weak_text,
+                                          # family = main_font,
+                                          hjust = 0.5, # Seems to be ignored
+                                          margin = margin(4,0,2,4)),
+    legend.title = element_text(size = rel(1),
+                                # family = main_font,
+                                colour = strong_text), 
+    legend.text = element_text(size = rel(0.9),
+                               # family = main_font,
+                               colour = weak_text)
+  )
+
+}</code></pre>
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>I made this write-up for a few different reasons. First and foremost,
+I have dabbled in text mining a bit over the past year or so, and
+thought it would be interesting to take on a small project. Second, I
+wanted to curate a data set for the Tidy Tuesday project. By reading in
+the raw PDF files of Amazon’s annual reports and turning them into
+“tidy” data frames, I hope that I can contribute something useful to
+Tidy Tuesday, which I have had a great experience participating in.
+Third, I wanted to explore the relevance of basic text mining techniques
+when LLMs are also an option. Finally, I wanted to get into working with
+LLMs programatically so that I can learn to use them for tasks such as
+summarization and document comparison.</p>
+<p>I believe that LLMs have limitations but are strong tools if used
+correctly. People and organizations should be embracing such tools and
+finding ways in which they can be used to complete tasks more
+efficiently where appropriate. However, LLMs are not perfect, and many
+people do not have access paid features of LLMs. At many organizations,
+there are strict rules around how tools like ChatGPT can be used.
+Concerns about issues such as privacy, transparency, accuracy,
+computational intensity, and cost are all valid, and as a result, more
+basic NLP methods remain relevant.</p>
+<p>I hope that I can provide some insight into some use cases that LLMs
+might be appropriate for, and what sorts of use cases more basic
+techniques are appropriate for. At the end, I also make an attempt to
+use an LLM in tandem with some more basic text mining techniques, to
+highlight the idea that these methods can compliment one another. That
+being said, I am not an expert and I do not claim that my methods are
+the most efficient.</p>
+<p>Note that the majority of the basic text mining techniques used here
+were learned from the book Text Mining With R by Julia Silge and David
+Robinson, which is available for free online (<a
+href="https://www.tidytextmining.com/"
+class="uri">https://www.tidytextmining.com/</a>).</p>
+</div>
+<div id="amazons-annual-reports" class="section level2">
+<h2>Amazon’s Annual Reports</h2>
+<p>As a publicly-traded company, Amazon releases an annual report every
+year (with a December 31st year end). An annual report is essentially a
+summary of the company’s performance over the past year. It includes
+details on how well the company did financially, what goals were
+achieved, and what challenges it faced. The report also provides
+information about Amazon’s plans and ambitions for the future.</p>
+<p>I chose to use Amazon’s annual reports as the group of documents
+(corpus) to analyze for a few reasons; Amazon is an extremely well-known
+company, it has an interesting history (it went from selling books to
+selling everything under the sun), and there are nearly twenty years of
+annual reports available online. Other examples of things we can analyze
+with similar methods are articles, social media posts, and open-ended
+survey responses. While we group these annual reports by year, we could,
+for example, group articles or social media posts by author to compare
+different authors.</p>
+<p>The main goals here are to learn and explore methods. We will focus
+on showing how different methods can be used to understand key themes in
+the annual reports. Specifically, we want to understand the key themes
+of the most recent report, and how those themes differ from the themes
+of other years’ reports.</p>
+</div>
+<div id="using-simple-text-mining-techniques" class="section level2">
+<h2>Using Simple Text Mining Techniques</h2>
+<div id="reading-in-the-pdfs-for-use-with-tidytext"
+class="section level3">
+<h3>Reading in the PDFs for Use With {TidyText}</h3>
+<p>Let us start with some very simple techniques and see what sorts of
+insights we can glean. Below, the code I used to read in the PDFs and
+save them as .feather files. However, it is commented-out because it
+takes a long time to run. Instead, I load the already extracted
+data.</p>
+<pre class="r"><code># # Setup---------------------------------------------------------------------------------------------
+# 
+# # Clear memory
+# rm(list = ls(all.names = TRUE))
+# 
+# # Load libraries and install if not installed already
+# if (!require(&quot;pacman&quot;)) install.packages(&quot;pacman&quot;)
+# pacman::p_load(
+#   tidyverse,  # Grammar for data and graphics
+#   here,       # Relative file paths
+#   magrittr,   # More pipeable functions (eg., set_colnames())
+#   pdftools,   # Read PDFs Into R
+#   feather,    # Files that are fast to write and read
+#   furrr       # Run functions from purrr package (e.g., map_dfr()) in parallel
+# )
+# 
+# 
+# # Set up parallel computing for purrr (furrr) functions
+# future::plan(&quot;multicore&quot;)
+# 
+# 
+# 
+# # Read in Amazon Annual Reports ---------------------------------------------------------------------------------------
+# 
+# 
+# # Function to read in one report
+# read_one_standard &lt;- function(year_numeric) {
+#   
+#   year_string = as.character(year_numeric)
+#   
+#   # Read in one pdf with name according to pattern
+#     pdftools::pdf_text(pdf = here(paste0(&quot;Amazon_Budgets/PDFs/&quot;, year_string, &quot;-Annual-Report.pdf&quot;))) |&gt; # has difficulty with 2019 and 2020 reports
+#     as.data.frame() |&gt;
+#     magrittr::set_colnames(&quot;text&quot;) |&gt;
+#     # Add Column indicating year
+#     mutate(year = year_string) 
+#   
+# }
+# 
+# # Function to read in one report using ocr (more computationally intensive)
+#   # This is only necessary because there is something odd about the 2019 and 2020 PDFs
+# read_one_ocr &lt;- function(year_numeric) {
+#   
+#   year_string = as.character(year_numeric)
+#   
+#   # Read in one pdf with name according to pattern
+#   pdftools::pdf_ocr_text(pdf = here(paste0(&quot;Amazon_Budgets/PDFs/&quot;, year_string, &quot;-Annual-Report.pdf&quot;))) |&gt;
+#     as.data.frame() |&gt;
+#     magrittr::set_colnames(&quot;text&quot;) |&gt;
+#     # Add Column indicating year
+#     mutate(year = year_string) 
+#   
+# }
+# 
+# 
+# # Run the function on all years (except 2019 and 2020) in parallel and rbind into one tidy dataframe
+# well_behaved_reports &lt;- future_map_dfr(c(2005:2018, 2021:2023), read_one_standard)   # This will take a while to run. Go grab a coffee or something.
+# 
+# # Run the function on 2019 and 2020 in parallel and rbind into one tidy dataframe
+# poorly_behaved_reports &lt;-  future_map_dfr(2019:2020, read_one_ocr) # This also will take a while to run. Go grab a second coffee or something.
+# 
+# # Rbind all reports into one dataframe
+# all_reports &lt;- rbind(well_behaved_reports, poorly_behaved_reports)
+# 
+# 
+# # Write Data ------------------------------------------------------------------------------------------------------------
+# 
+# # Save in .feather format
+# write_feather(all_reports, here(&quot;Amazon_Budgets/Data/Intermediate/all_reports_ocr_uncleaned.feather&quot;))</code></pre>
+<pre class="r"><code># Read data from all years to start from this point in the .Rmd
+all_reports_untokenized &lt;- read_feather(here(&quot;Amazon_Budgets/Data/Intermediate/all_reports_ocr_uncleaned.feather&quot;))
+
+# Tokenize 
+all_reports &lt;-  all_reports_untokenized |&gt;
+  unnest_tokens(
+      word, # Name of column of words in new dataframe
+      text  # Name of column containing text in original dataframe
+      ) 
+
+# Save tidy data tokenized by single word
+write_feather(all_reports, here(&quot;Amazon_Budgets/Data/Intermediate/all_reports_tokenized.feather&quot;))</code></pre>
+</div>
+<div id="stop-words-and-raw-word-frequencies" class="section level3">
+<h3>Stop Words and Raw Word Frequencies</h3>
+<p>First, I use basic functions to do something really simple - generate
+a list of the top ten most-used words across the nineteen annual reports
+in our data.</p>
+<pre class="r"><code># Ten most-common words
+all_reports |&gt;
+  group_by(word) |&gt;
+  summarise(&quot;Word Count&quot; = n()) |&gt;
+  slice_max(order_by = `Word Count`, n = 10) |&gt;
+  kable(
+    col.names = c(&quot;Word&quot;, &quot;Count&quot;)
+  )</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Word</th>
+<th align="right">Count</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">and</td>
+<td align="right">37970</td>
+</tr>
+<tr class="even">
+<td align="left">of</td>
+<td align="right">29008</td>
+</tr>
+<tr class="odd">
+<td align="left">the</td>
+<td align="right">26705</td>
+</tr>
+<tr class="even">
+<td align="left">to</td>
+<td align="right">19861</td>
+</tr>
+<tr class="odd">
+<td align="left">in</td>
+<td align="right">17945</td>
+</tr>
+<tr class="even">
+<td align="left">our</td>
+<td align="right">16328</td>
+</tr>
+<tr class="odd">
+<td align="left">we</td>
+<td align="right">12183</td>
+</tr>
+<tr class="even">
+<td align="left">for</td>
+<td align="right">8489</td>
+</tr>
+<tr class="odd">
+<td align="left">as</td>
+<td align="right">7451</td>
+</tr>
+<tr class="even">
+<td align="left">a</td>
+<td align="right">7248</td>
+</tr>
+</tbody>
+</table>
+<p>As you can see, the results are profoundly uninteresting. We
+basically get a list of ten of the most common words in the English
+language. To get something more interesting, let’s remove a list of stop
+words. Stop words are words that are used commonly and are unlikely to
+be interesting for our analysis. Examples include words such as “the”,
+“it” and “or”.</p>
+<pre class="r"><code># Remove Standard list of common words such as &quot;and&quot;, &quot;the&#39;, &quot;or&quot;
+all_reports_no_stop &lt;-  all_reports |&gt;
+  anti_join(stop_words, by = &quot;word&quot;)
+
+# A New List of the Most-Common Words
+all_reports_no_stop |&gt;
+  group_by(word) |&gt;
+  summarise(&quot;Word Count&quot; = n()) |&gt;
+  slice_max(order_by = `Word Count`, n = 10) |&gt;
+  kable(
+    col.names = c(&quot;Word&quot;, &quot;Count&quot;)
+  )</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Word</th>
+<th align="right">Count</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">cash</td>
+<td align="right">3967</td>
+</tr>
+<tr class="even">
+<td align="left">million</td>
+<td align="right">3708</td>
+</tr>
+<tr class="odd">
+<td align="left">net</td>
+<td align="right">3704</td>
+</tr>
+<tr class="even">
+<td align="left">tax</td>
+<td align="right">3596</td>
+</tr>
+<tr class="odd">
+<td align="left">december</td>
+<td align="right">3486</td>
+</tr>
+<tr class="even">
+<td align="left">31</td>
+<td align="right">3352</td>
+</tr>
+<tr class="odd">
+<td align="left">sales</td>
+<td align="right">3275</td>
+</tr>
+<tr class="even">
+<td align="left">income</td>
+<td align="right">3119</td>
+</tr>
+<tr class="odd">
+<td align="left">financial</td>
+<td align="right">2982</td>
+</tr>
+<tr class="even">
+<td align="left">stock</td>
+<td align="right">2939</td>
+</tr>
+</tbody>
+</table>
+<p>It is clear from the above table that there are still words that will
+might be interesting for our analysis, such as individual numbers, which
+appear because of dates or financial tables in the document. The words
+“December” and “31” appear because Amazon uses a fiscal year end of
+December 31st. Although I remove the names of all months because I think
+they will not be very interesting, looking into the word “December” and
+finding that it appears frequently because it is the month of Amazon’s
+fiscal year-end has given us our first insight, albeit a fairly trivial
+one.</p>
+<pre class="r"><code># Custom list of stop words to remove
+my_stop_words &lt;- c(   
+  str_to_lower(month.name), # List of month names
+  letters                  # List of letters
+)
+
+# Remove above list of custom stop words and anything contain a number
+all_reports_no_stop &lt;- all_reports_no_stop |&gt;
+  filter(!(word %in% my_stop_words),    # List of custom stop words
+         !str_detect(word, &quot;\\d&quot;),       # Anything containing a number
+         !str_detect(word, &quot;_&quot;))         # Words containing an underscore
+
+# A New List of the Most-Common Words
+most_common_no_stop &lt;- all_reports_no_stop |&gt;
+  filter(year == 2023) |&gt;
+  group_by(word) |&gt;
+  summarise(&quot;Word Count&quot; = n()) |&gt;
+  slice_max(order_by = `Word Count`, n = 10)
+
+most_common_no_stop |&gt;
+  kable(
+    col.names = c(&quot;Word&quot;, &quot;Count&quot;)
+  )</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Word</th>
+<th align="right">Count</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">cash</td>
+<td align="right">211</td>
+</tr>
+<tr class="even">
+<td align="left">services</td>
+<td align="right">211</td>
+</tr>
+<tr class="odd">
+<td align="left">billion</td>
+<td align="right">200</td>
+</tr>
+<tr class="even">
+<td align="left">tax</td>
+<td align="right">198</td>
+</tr>
+<tr class="odd">
+<td align="left">including</td>
+<td align="right">182</td>
+</tr>
+<tr class="even">
+<td align="left">net</td>
+<td align="right">177</td>
+</tr>
+<tr class="odd">
+<td align="left">sales</td>
+<td align="right">174</td>
+</tr>
+<tr class="even">
+<td align="left">income</td>
+<td align="right">166</td>
+</tr>
+<tr class="odd">
+<td align="left">operating</td>
+<td align="right">163</td>
+</tr>
+<tr class="even">
+<td align="left">financial</td>
+<td align="right">148</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="why-not-just-go-straight-to-an-llm" class="section level3">
+<h3>Why Not Just Go Straight to an LLM?</h3>
+<p>What if we try to do the same thing by asking an LLM to give us he
+most common words? First of all, it is usually not practical to feed an
+LLM an entire document that is as long as one of these annual reports.
+This is a hurdle we will have to creatively deal with later. For now,
+for the purposes of demonstration, let’s give an LLM (here I use
+mistral’s large model for cost reasons) the first 500 words of the
+document and ask it for the most common ones. Then let’s compare its
+response to a manually programmed answer, which I know is correct. To
+interact with the LLM here, I use R’s {TidyChatModels} package. Note
+that I comment out all of the code that involves API calls in this
+document to avoid paying for API calls unnecessarily every time I
+rebuild my website.</p>
+<pre class="r"><code># # Turn text into a form that an LLM can analyze easily
+# text_to_analyze &lt;- all_reports_no_stop |&gt;
+#   filter(year == 2023) |&gt;
+#   slice_head(n = 500) |&gt; # Providing an entire report would be costly
+#   select(&quot;word&quot;) |&gt;
+#   unlist() |&gt;
+#   paste(collapse = &quot; &quot;)
+# 
+# # Test mistral chat through tidychatmodels
+# mistral_chat &lt;- create_chat(&#39;mistral&#39;, Sys.getenv(&#39;MISTRAL_API_KEY&#39;)) |&gt;
+#   add_model(&#39;mistral-large-latest&#39;) |&gt;
+#   add_params(temperature = 0.0
+#              # ,max_tokens = 20000
+#              ) |&gt;
+#   add_message(
+#     role = &#39;system&#39;,
+#     message = &#39;You receive text and return the ten most-common words in that text along with the number of times each of those words appears. Do not return anything else&#39;
+#   ) |&gt;
+#   add_message(
+#     paste(
+#       text_to_analyze
+#     )
+#   ) |&gt;
+#   perform_chat()
+# # Output
+# result &lt;- mistral_chat |&gt; extract_chat(silent = TRUE)
+# 
+# # Save result
+# 
+# write_rds(result, &quot;Amazon_Budgets/Data/mistral_word_count.rds&quot;)
+
+result &lt;- read_rds(&quot;Amazon_Budgets/Data/mistral_word_count.rds&quot;)
+
+# Print the result from the LLM
+llm_result &lt;- result |&gt;
+  filter(role == &quot;assistant&quot;) |&gt;
+  select(message) |&gt;
+  unlist() |&gt;
+  paste(collapse = &quot; &quot;)
+
+paste(&quot;LLM Result&quot;, llm_result)  </code></pre>
+<pre><code>## [1] &quot;LLM Result ```\n1. amazon 34\n2. customers 20\n3. yoy 17\n4. revenue 11\n5. cost 10\n6. aws 9\n7. delivery 8\n8. serve 7\n9. progress 7\n10. unit 6\n```&quot;</code></pre>
+<pre class="r"><code># Manual Result
+all_reports_no_stop |&gt;
+  filter(year == 2023) |&gt;
+  slice_head(n = 500) |&gt; 
+  group_by(word) |&gt;
+  summarise(count = n()) |&gt;
+  arrange(desc(count)) |&gt;
+  slice_head(n = 10) |&gt;
+  kable(caption = &quot;Manual Result&quot;, 
+        col.names = c(&quot;Word&quot;, &quot;Count&quot;))</code></pre>
+<table>
+<caption>Manual Result</caption>
+<thead>
+<tr class="header">
+<th align="left">Word</th>
+<th align="right">Count</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">customers</td>
+<td align="right">13</td>
+</tr>
+<tr class="even">
+<td align="left">yoy</td>
+<td align="right">9</td>
+</tr>
+<tr class="odd">
+<td align="left">aws</td>
+<td align="right">8</td>
+</tr>
+<tr class="even">
+<td align="left">cost</td>
+<td align="right">7</td>
+</tr>
+<tr class="odd">
+<td align="left">revenue</td>
+<td align="right">6</td>
+</tr>
+<tr class="even">
+<td align="left">amazon</td>
+<td align="right">5</td>
+</tr>
+<tr class="odd">
+<td align="left">lower</td>
+<td align="right">5</td>
+</tr>
+<tr class="even">
+<td align="left">selection</td>
+<td align="right">5</td>
+</tr>
+<tr class="odd">
+<td align="left">serve</td>
+<td align="right">5</td>
+</tr>
+<tr class="even">
+<td align="left">we’ve</td>
+<td align="right">5</td>
+</tr>
+</tbody>
+</table>
+<p>It seems that the LLM is acting in a way that we do not expect.
+Perhaps it is counting the number of times strings appear, even if they
+are contained within larger strings. For example, it might included
+“amazon” and “amazon.com” both as appearances of amazon, even though we
+just want to count “amazon.” Let’s see what the number of words that
+contain the sub string “amazon,” really is using simple tidyverse
+code.</p>
+<pre class="r"><code># Manually get the number of words Containing the string &quot;amazon&quot;
+amazon_appr &lt;- all_reports_no_stop |&gt;
+  filter(year == 2023) |&gt;
+  slice_head(n = 500) |&gt; 
+  filter(str_detect(word, &quot;amazon&quot;)) |&gt; # detects all words containing &quot;amazon&quot;
+  nrow()</code></pre>
+<p>The word “amazon” appears 9 times, including its appearances within
+other words. While this gets us closer to the LLM’s results, the results
+still do not align. This highlights the opacity of an LLM’s approach to
+solving specific problems, though certain models such as OpenAI’s o1 try
+to mitigate this issue. It is also worth noting that the LLM takes some
+time to produce a result, while our traditional methods with {TidyText}
+are effectively instantaneous.</p>
+<p>An easy critique is that my prompt is not very good. I could have
+been more specific. However, that is part of the point I want to make.
+When prompting an LLM for a specific result, we need to provide a very
+specific and carefully-worded prompt. Even then, however, the process
+for arriving at the result is opaque, and it is hard know whether the
+result without manually checking it. Really what we have done here is
+used a needlessly complex tool for a very simple task. It is like we
+wanted to dig a a hole to plant a flower and brought an excavator to do
+the job. Maybe somebody who is very skilled with an excavator could do
+it, but a shovel is still the more appropriate and cost-effective
+tool.</p>
+</div>
+<div
+id="raw-term-frequencies-in-the-first-9-reports-vs-the-last-10-reports"
+class="section level3">
+<h3>Raw Term Frequencies in the First 9 Reports vs The Last 10
+Reports</h3>
+<p>Let’s continue with some more traditional text mining techniques, and
+show how we can use them to make some fun plots in {ggplot2}.</p>
+<pre class="r"><code># Prepare data for the scatter plot
+scatter_data &lt;- all_reports_no_stop |&gt;
+  mutate(first_second_half = if_else(year %in% 2005:2013, &quot;first_half&quot;, &quot;second_half&quot;)) |&gt;
+  group_by(first_second_half, word) |&gt;
+  summarise(word_count = n()) |&gt;
+  pivot_wider(names_from = first_second_half, values_from = word_count) |&gt;
+  mutate(second_half = second_half * 9/10, # Normalize second half to account for the fact it has one more year
+         difference = abs(first_half - second_half)) 
+  
+# Scatterplot
+ggplot(scatter_data, aes(x = first_half, y = second_half)) + 
+  geom_point(color = my_pal[1], alpha = 0.65, size = 2.5) + 
+  geom_text_repel(label = if_else(scatter_data$first_half &gt; 1000 | scatter_data$second_half &gt; 1000 | scatter_data$difference &gt; 300, scatter_data$word, &quot;&quot;), 
+                  color = weak_text, 
+                  size = 6) + 
+  geom_abline(slope = 1, intercept = 0, linetype = &quot;dashed&quot;, color = line_colour) +  # 45-degree line
+  labs(title = &quot;Comparing Word Frequencies Across Two Time Periods&quot;, 
+       subtitle = &quot;Note that the frequencies of words used in the 2014 to 2023
+       period are multiplied by 9/10 to account for the fact that that this period
+       is one year longer than the other.&quot;,
+       x = &quot;2005 to 2013 Annual Reports&quot;, y = &quot;2014 to 2023 Annual Reports&quot;) + 
+  my_theme()</code></pre>
+<p><img src="Text-Mining-Amazon-Budgets_files/figure-html/Scatter%20of%20Raw%20Word%20Frequencies-1.png" width="960" /></p>
+<p>From this, we can glean a few interesting pieces of information.
+First, we see that words like “Cash”, “Tax”, and “Costs”, are used at
+relatively similar frequencies in both the first nine annual reports and
+the last ten. However, words like “Billion”, and “AWS”, are used much
+more frequently in the last ten years of annual reports than the first
+nine. The word “Billion” likely appears more in the second half, and
+“Million” in the first half because the company has grown a great deal,
+and now deals in billions of dollars rather than millions. “AWS” refers
+to Amazon Web Services. From this graphic we might guess that Amazon Web
+Services has become an increasingly important part of the company over
+time. On the flip side, we see that the words “stock” and “financial”
+were used more frequently in the first nine annual reports. We might
+want to investigate this more to understand why.</p>
+</div>
+<div id="total-word-counts" class="section level3">
+<h3>Total Word Counts</h3>
+<p>One attribute of these reports that might cause an issue for our
+analysis is total word count. If the annual reports get substantially
+shorter over time, we will likely see a downward trend in most words.
+However, such trends would not actually be meaningful. Let’s take a look
+at the word counts of the annual reports by year, after removing the
+stop words discussed earlier. We see that although the total number of
+words is generally fairly similar from year to year, the differences
+between certain years are meaningful; the 2023 report has nearly 40%
+more words than the 2010 report. Therefore, although I tried to make the
+two periods in the previous section comparable by adjusting for the
+number of years, it might be more appropriate to adjust for the total
+number of words.</p>
+<pre class="r"><code># Do annual reports vary much in word count?
+annual_word_count &lt;- all_reports_no_stop |&gt;
+  mutate(year = as.numeric(year)) |&gt;
+  group_by(year) |&gt;
+  summarise(word_count = n())
+
+  
+# Scatterplot
+ggplot(annual_word_count, aes(x = year, y = word_count)) + 
+  geom_point(color = my_pal[1], alpha = 0.65, size = 3.5) + 
+  geom_line(color = my_pal[1], size = 0.75) +
+  labs(title = &quot;Total Word Counts Over Time&quot;, 
+       subtitle = &quot;Stop Words Removed&quot;,
+       x = &quot;&quot;, y = &quot;Total Words Exluding Stop Words&quot;) + 
+  my_theme()</code></pre>
+<p><img src="Text-Mining-Amazon-Budgets_files/figure-html/Line%20Graph%20Total%20Word%20Count-1.png" width="960" /></p>
+</div>
+<div id="tracking-the-usage-of-one-word-over-time"
+class="section level3">
+<h3>Tracking the Usage of One Word Over Time</h3>
+<p>Next, let us illustrate the effect of normalizing our frequencies for
+the total number of words used in each annual report, while also
+exploring the usage of the term “AWS”, which we identified earlier as a
+word that was used much more frequently from 2014 to 2023 than from 2005
+to 2013. To do so, let’s look at both the raw frequency of the term by
+year, and an frequency adjusted for the total number of words in the
+annual report. The adjustment used involves dividing the occurrences of
+the word we want to look at by the total word count for a given year,
+and then multiplying by the average word count across all of the
+years.</p>
+<pre class="r"><code># Prepare data for the line graph
+one_word_line_data &lt;- all_reports_no_stop |&gt;
+  group_by(year, word) |&gt;
+  mutate(year = as.numeric(year)) |&gt;
+  summarise(word_count = n(), .groups = &quot;drop&quot;) |&gt;
+  filter(word == &quot;aws&quot;) |&gt;
+  complete(year = full_seq(year, 1), word = &quot;aws&quot;, fill = list(word_count = 0)) |&gt; # Otherwise years with 0 observations are lost
+  pivot_wider(names_from = word, values_from = word_count)
+  
+# Scatterplot
+raw_freq_p &lt;- ggplot(one_word_line_data, aes(x = year, y = aws)) + 
+  geom_line(color = my_pal[1], size= 0.75) +
+  geom_point(color = my_pal[1], alpha = 0.65, size = 3.5) + 
+  labs(title = &quot;Raw Frequency of The Term AWS Over Time&quot;, 
+       x = &quot;&quot;, y = &quot;Occurences&quot;) + 
+  my_theme()
+
+
+
+# Average Word Count
+avg_word_count &lt;- mean(annual_word_count$word_count)
+
+# Join data for just aws with data for total word count
+adjusted_word_line_data &lt;- annual_word_count |&gt;
+  mutate(year = as.numeric(year)) |&gt;
+  full_join(one_word_line_data, by = &quot;year&quot;) |&gt;
+  replace(is.na(year), 0) |&gt;
+  mutate(aws = aws/word_count*avg_word_count)
+
+
+# Line Graph
+adj_freq_p &lt;- ggplot(adjusted_word_line_data, aes(x = year, y = aws)) + 
+  geom_line(color = my_pal[1], size= 0.75) +
+  geom_point(color = my_pal[1], alpha = 0.65, size = 3.5) + 
+  labs(title = &quot;Word-Count-Adjusted Frequency of The Term AWS Over Time&quot;, 
+       x = &quot;&quot;, y = &quot;Adjusted Occurences&quot;) + 
+  my_theme()
+
+gridExtra::grid.arrange(raw_freq_p, adj_freq_p, 
+                        ncol = 1)</code></pre>
+<p><img src="Text-Mining-Amazon-Budgets_files/figure-html/Raw%20Line%20Graph%20of%20One%20Word-1.png" width="960" /></p>
+<p>Although AWS was established in 1997, we see that the term was hardly
+used in Amazon’s annual reports until around 2010, when it started to be
+used much more. Then, in the 2015 annual report the term was used almost
+70 times. AWS seems to have remained an important topic in the reports
+since. Adjusting the series for the total word counts in the annual
+reports does not make a terribly large difference with this corpus of
+documents but it could in other cases.</p>
+</div>
+</div>
+<div id="relative-word-frequencies" class="section level2">
+<h2>Relative Word Frequencies</h2>
+<p>By looking at changes in the usage of certain words over time and
+adjusting for total word counts, we have begun to look at something a
+little bit more interesting. However, there are more systematic
+approaches to finding which words are relatively common in which annual
+reports than what we have done so far. One approach is to combine term
+frequency (tf) with inverse document frequency (idf) to generate a
+tf-idf statistic. In the book Text Mining With R, Julia Silge and David
+Robinson describe tf-idf as follows</p>
+<p><em>“The statistic tf-idf is intended to measure how important a word
+is to a document in a collection (or corpus) of documents, for example,
+to one novel in a collection of novels or to one website in a collection
+of websites.”</em></p>
+<p>By looking at which words have the highest tf-idf statistics in a
+given annual report, we are able to get an idea of which words typify
+that annual report.</p>
+<div id="words-that-typify-the-2023-annual-report"
+class="section level3">
+<h3>Words that Typify The 2023 Annual Report</h3>
+<p>First, let’s look at the words with the highest tf-idf statistics
+from the 2023 annual report, to see which words are used most in the
+2023 annual report <em>relative</em> to other years’ reports.</p>
+<pre class="r"><code># Filter words containing numbers out of dataframe with stop words
+all_reports_no_numbers &lt;-  all_reports |&gt;
+  filter(!str_detect(word, &quot;\\d&quot;), 
+         !str_detect(word, &quot;_&quot;))
+
+# Generate table of tf-idf stats for all words and years
+tf_idf_all &lt;- all_reports_no_numbers |&gt;
+  group_by(year, word) |&gt;
+  summarise(word_count = n()) |&gt;
+  bind_tf_idf(word, year, word_count)
+
+# Table of just 2023 report
+tf_idf_2023 &lt;- tf_idf_all |&gt;
+  filter(year == &quot;2023&quot;)
+
+tf_idf_2023 |&gt;
+  slice_max(order_by = `tf_idf`, n = 10) |&gt;
+  kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">year</th>
+<th align="left">word</th>
+<th align="right">word_count</th>
+<th align="right">tf</th>
+<th align="right">idf</th>
+<th align="right">tf_idf</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">2023</td>
+<td align="left">primitives</td>
+<td align="right">31</td>
+<td align="right">0.0006762</td>
+<td align="right">2.9444390</td>
+<td align="right">0.0019911</td>
+</tr>
+<tr class="even">
+<td align="left">2023</td>
+<td align="left">genai</td>
+<td align="right">18</td>
+<td align="right">0.0003927</td>
+<td align="right">2.9444390</td>
+<td align="right">0.0011561</td>
+</tr>
+<tr class="odd">
+<td align="left">2023</td>
+<td align="left">stores</td>
+<td align="right">66</td>
+<td align="right">0.0014397</td>
+<td align="right">0.4595323</td>
+<td align="right">0.0006616</td>
+</tr>
+<tr class="even">
+<td align="left">2023</td>
+<td align="left">primitive</td>
+<td align="right">10</td>
+<td align="right">0.0002181</td>
+<td align="right">2.9444390</td>
+<td align="right">0.0006423</td>
+</tr>
+<tr class="odd">
+<td align="left">2023</td>
+<td align="left">ai</td>
+<td align="right">18</td>
+<td align="right">0.0003927</td>
+<td align="right">1.5581446</td>
+<td align="right">0.0006118</td>
+</tr>
+<tr class="even">
+<td align="left">2023</td>
+<td align="left">cybersecurity</td>
+<td align="right">17</td>
+<td align="right">0.0003708</td>
+<td align="right">1.3350011</td>
+<td align="right">0.0004951</td>
+</tr>
+<tr class="odd">
+<td align="left">2023</td>
+<td align="left">chips</td>
+<td align="right">12</td>
+<td align="right">0.0002618</td>
+<td align="right">1.8458267</td>
+<td align="right">0.0004832</td>
+</tr>
+<tr class="even">
+<td align="left">2023</td>
+<td align="left">fms</td>
+<td align="right">7</td>
+<td align="right">0.0001527</td>
+<td align="right">2.9444390</td>
+<td align="right">0.0004496</td>
+</tr>
+<tr class="odd">
+<td align="left">2023</td>
+<td align="left">ending</td>
+<td align="right">8</td>
+<td align="right">0.0001745</td>
+<td align="right">2.2512918</td>
+<td align="right">0.0003929</td>
+</tr>
+<tr class="even">
+<td align="left">2023</td>
+<td align="left">perishable</td>
+<td align="right">6</td>
+<td align="right">0.0001309</td>
+<td align="right">2.9444390</td>
+<td align="right">0.0003854</td>
+</tr>
+</tbody>
+</table>
+<p>The above table shows the words with the ten highest tf-idf
+statistics among words in Amazon’s 2023 annual report. Note that we do
+not have to remove a list of common words (e.g., “the”, “and”) here,
+because those words will be common in all reports, and therefore have
+low tf-idf statistics. We can see that in the most recent year, Amazon’s
+annual report focused on some hot topics in the world of tech, such as
+AI, chips, and cybersecurity. The words “primitive” and “primitive”
+which refer to small foundation pieces of larger processes within the
+company.</p>
+<p>One way that we can visualize this is with a word cloud. Here, I make
+a word cloud of the 100 words with the highest tf-idf statistics from
+the 2023 annual report, with size and a color gradient mapped to the
+tf-idf statistic.</p>
+<pre class="r"><code># Combos of two letters. To be removed for word cloud
+letter_combo_list &lt;- as.vector(outer(letters,letters, paste0))
+
+# Function to make wordcloud of top tf-idf&#39;s for just one year
+word_cloud_one_year &lt;- function(year_numeric, max_size = 35) {
+  
+  tf_idf_all |&gt;
+    filter(year == year_numeric) |&gt;
+    slice_max(order_by = `tf_idf`, n = 50) |&gt;
+    filter(!str_detect(word, &quot;_&quot;), # Was picking up underline
+           !str_detect(word, &quot;www.&quot;), # web addresses confuse ggplot
+           !(word %in% letters), 
+           !(word %in% letter_combo_list)) |&gt; 
+    # mutate(word = str_replace(word, &quot;\\.&quot;, &quot;&quot;)) |&gt; # Web addresses can trip up ggplot
+    ggplot(aes(label = word, size = tf_idf, color = tf_idf)) + 
+    scale_size_area(max_size = max_size) +
+    scale_color_gradient(high = darken(my_pal[1], 0.15), low = lighten(my_pal[1], 0.15)) +
+    labs(title = paste(&quot;Words That Distinguish The&quot;, as.character(year_numeric), &quot;Report&quot;)) + 
+    geom_text_wordcloud() + 
+    my_theme()
+  
+}
+
+# Run the function for the year 2023
+word_cloud_one_year(2023)</code></pre>
+<p><img src="Text-Mining-Amazon-Budgets_files/figure-html/2023%20tf_idf%20Word%20Cloud-1.png" width="960" /></p>
+</div>
+<div id="top-tf-idf-words-from-a-selection-of-other-years"
+class="section level3">
+<h3>Top TF-IDF Words From A Selection of Other Years</h3>
+<pre class="r"><code>list_of_plots &lt;- lapply(c(2005, 2010,  2015,  2020), word_cloud_one_year, max_size = 10)
+
+grid.arrange(grid.arrange(grobs = list_of_plots, ncol = 2))</code></pre>
+<p><img src="Text-Mining-Amazon-Budgets_files/figure-html/Grid%20of%20Wordclouds%20for%20Each%20Year-1.png" width="960" /></p>
+<p>Before moving on, I should note that everything we have done up to
+this point could be done with n-grams instead of single words. An n-gram
+is a sequence of words. For example a bi-gram is a sequence of two
+words. Sequences of words can often provide quite different insights
+than words taken individually. However, my goal is not to rewrite
+everything already written in Text Mining With R, so for more
+information you can look there.</p>
+</div>
+</div>
+<div id="summarizing-key-themes-and-comparing-reports-using-llms"
+class="section level2">
+<h2>Summarizing Key Themes and Comparing Reports Using LLMs</h2>
+<p>Here, we are are entering territory where an LLM can genuinely be
+useful. Let’s start by getting an LLM to summarize the key themes from
+the 2023 annual report. Although this sounds extremely simple (I
+initially assumed that one could just feed an entire annual report to an
+LLM and ask for a summary, which is not the case) doing it efficiently
+involves quite a few steps. Moreover, despite my attempts to purely use
+R for this, I found the need to use LangChain, which has no R
+implementation. Therefore, I use Python for these next sections. For
+simpler tasks, both {TidyChatModels} (created by Albert Rapp) and
+{TidyLLM} (created by Eduard Brüll) are good R packages.</p>
+<p>Before moving on, I must give credit where credit is due. The
+majority of the concepts and a lot of the code used for summarization
+here came from Greg Kamradt’s tutorials (<span
+class="citation">@GregKamradt</span> on Twitter), specifically this
+tutorial:</p>
+<p><a
+href="https://github.com/gkamradt/langchain-tutorials/blob/main/data_generation/5%20Levels%20Of%20Summarization%20-%20Novice%20To%20Expert.ipynb"
+class="uri">https://github.com/gkamradt/langchain-tutorials/blob/main/data_generation/5%20Levels%20Of%20Summarization%20-%20Novice%20To%20Expert.ipynb</a></p>
+<p>Furthermore, the combination of my more limited Python skills and
+this being my first foray into LangChain meant that I did have to ask an
+LLM for some help with the python code. The irony in that is not lost on
+me.</p>
+<div id="set-up-and-test-python-mistral-ai" class="section level3">
+<h3>Set Up and Test Python / Mistral AI</h3>
+<p>First, I set up my API and test that I can use it to ping the desired
+LLM. I hid the code setting up the API key because API keys are like
+passwords and should be kept secret. For the rest of this exercise, I
+use OpenAI’s GPT-4o-mini.</p>
+<pre class="python"><code>
+# 
+# from langchain.chat_models import ChatOpenAI
+# 
+# # For use later
+# llm = ChatOpenAI(
+#     model_name=&quot;gpt-4o-mini&quot;,  # Specify the GPT-4o Mini model
+#     temperature=0,
+#     max_retries=2,
+#     openai_api_key=OPENAI_API_KEY  # Replace with your actual OpenAI API key
+# )
+# </code></pre>
+</div>
+<div id="summarizing-a-reports-key-themes-with-an-llm"
+class="section level3">
+<h3>Summarizing a Report’s Key Themes with an LLM</h3>
+<p>First, let’s load our reports. In this case I read the PDFs with
+Python and saved them all together as a .json file beforehand. The below
+code that has been commented out, accomplishes that. To begin, I extract
+just the most recent report and work on developing a summary of it.</p>
+<pre class="python"><code>
+# # Define the base directory where the reports are located
+# base_directory = r&quot;path_to_directory&quot;
+# 
+# # Function to read PDF and extract text
+# def read_pdf(file_path):
+#     reader = PdfReader(file_path)
+#     text = &quot;&quot;
+#     for i, page in enumerate(reader.pages):
+#         if i == 1:  # Get only second page (index 1)
+#             text = page.extract_text()  # Store the text of the second page
+#             break  # No need to process further pages
+#     return text
+# 
+# 
+# # Function to process all reports from 2005 to 2023
+# def process_reports(start_year, end_year, base_directory):
+#     reports = []
+#     for year in range(start_year, end_year + 1):
+#         file_path = os.path.join(base_directory, f&quot;{year}-Annual-Report.pdf&quot;)
+#         
+#         # Check if the file exists
+#         if os.path.exists(file_path):
+#             print(f&quot;Processing: {file_path}&quot;)
+#             pdf_text = read_pdf(file_path)  # Highlight: Modified to get only the 10th page
+# 
+#             if pdf_text:  # Ensure the 10th page is not empty
+#                 # No need to split text into chunks since we&#39;re dealing with a single page
+#                 documents = [Document(page_content=pdf_text)]  # Store as a single Document
+#                 reports.append((year, documents))
+#         else:
+#             print(f&quot;File for {year} not found: {file_path}&quot;)
+#     
+#     return reports
+# 
+# # Run the function to read in all of the PDFs
+# pyth_all_years = process_reports(2005, 2023, base_directory)
+# 
+# 
+# ## Save the read-in PDFs as JSON files
+# my_output_path = &quot;my_output_path&quot;
+# 
+# # Save the reports to a JSON file
+# def save_reports_to_json(reports, output_path):
+#     # Convert reports to a dictionary
+#     data = {year: [doc.page_content for doc in documents] for year, documents in reports}
+#     
+#     # Save to JSON
+#     with open(output_path, &quot;w&quot;, encoding=&quot;utf-8&quot;) as f:
+#         json.dump(data, f, ensure_ascii=False, indent=4)
+#     print(f&quot;Reports saved to {output_path}&quot;)
+# 
+# # Save as .json
+# save_reports_to_json(pyth_all_years, my_output_path)
+# </code></pre>
+<pre class="python"><code>
+import os
+import json
+from langchain.schema import Document  # Make sure to import the Document class
+
+input_path = path_to_my_file # Path hidden
+
+# Function to load the JSON of all of the reports that we already saved
+def load_reports_from_json(input_path):
+    with open(input_path, &quot;r&quot;, encoding=&quot;utf-8&quot;) as f:
+        data = json.load(f)
+    
+    # Convert the dictionary back to LangChain Document objects
+    reports = []
+    for year, chunks in data.items():
+        documents = [Document(page_content=chunk) for chunk in chunks]
+        reports.append((int(year), documents))
+    return reports
+
+# Load all reports
+all_reports = load_reports_from_json(input_path)
+
+# Function to pull out reports for a list of specified years
+def get_reports_for_years(all_reports, target_years):
+    selected_reports = {}
+    for year, documents in all_reports:
+        if year in target_years:
+            selected_reports[year] = &quot; &quot;.join([doc.page_content for doc in documents])
+    
+    return selected_reports  # Returns a dictionary of year -&gt; combined report text
+
+
+
+# Run function to get report for the year 2023
+report_2023 = get_reports_for_years(all_reports, [2023])
+# Run the function to get report for all other years
+other_reports = get_reports_for_years(all_reports, list(range(2013, 2022)))
+
+
+# Combine 2023 report into a single string
+report_2023 = &quot; &quot;.join(report_2023.values())
+# Combine all other reports into a single string
+other_reports = &quot; &quot;.join(other_reports.values())</code></pre>
+<p>Now we have an object containing the 2023 report (target document)
+and an object containing all of the other reports (the rest of the
+corpus). As alluded to earlier, the main difficulty we run into is that
+it is not feasible to feed an entire annual report to the LLM. Even if
+it doesn’t exceed the token limit, doing so would be expensive. This is
+an even bigger problem if we want to feed decades worth of reports to
+the LLM. So what do we do?</p>
+<p>I will avoid going into too much depth about exactly what I do here.
+Almost everything here is explained well in Greg Karmadt’s tutorial,
+which I linked above. The following steps describe the process.</p>
+<ol style="list-style-type: decimal">
+<li>Split the report up into chunks (referred to as documents in the
+code)</li>
+<li>Embed the chunks</li>
+<li>Group the chunks into clusters based on the vector embeddings, using
+K Means Clustering.</li>
+<li>Extract Only the centroid chunk from each cluster</li>
+<li>Prompt the LLM to summarize each of those centroid chunks</li>
+<li>Prompt the LLM to make a final summary based on the group of the
+summaries of the centroid chunks. This is the final summary of the key
+themes.</li>
+</ol>
+<p>Furthermore, to reduce cost and avoid exceeding token limits, I look
+at the last ten years of reports rather than all of the reports.</p>
+<pre class="python"><code>
+# # Loaders
+# from langchain.schema import Document
+# 
+# # Splitters
+# from langchain.text_splitter import RecursiveCharacterTextSplitter
+# 
+# # Model
+# from langchain_openai import ChatOpenAI
+# 
+# # Embedding Support
+# from langchain_community.vectorstores import FAISS
+# from langchain_openai import OpenAIEmbeddings
+# 
+# # Summarizer we&#39;ll use for Map Reduce
+# from langchain.chains.summarize import load_summarize_chain
+# 
+# # Data stuff
+# import numpy as np
+# 
+# # Clustering
+# from sklearn.cluster import KMeans
+# 
+# def process_and_cluster_report(report_text, openai_api_key, num_clusters=10, chunk_size=10000, chunk_overlap=1000):
+#     &quot;&quot;&quot;
+#     Processes a single report, splits it into chunks, embeds the chunks, and performs clustering.
+# 
+#     Args:
+#         report_text (str): The text content of the report to process.
+#         openai_api_key (str): API key for OpenAI.
+#         num_clusters (int): The number of clusters for K-means clustering. Default is 5.
+#         chunk_size (int): The maximum size of each text chunk. Default is 100.
+#         chunk_overlap (int): The overlap between chunks. Default is 10.
+# 
+#     Returns:
+#         tuple: Contains:
+#             - docs (list): List of chunked documents.
+#             - vectors (numpy.ndarray): Array of embeddings for each chunk.
+#             - kmeans (KMeans): Fitted KMeans model.
+#     &quot;&quot;&quot;
+#     text_splitter = RecursiveCharacterTextSplitter(
+#         separators=[&quot;\n\n&quot;, &quot;\n&quot;, &quot;\t&quot;], chunk_size=chunk_size, chunk_overlap=chunk_overlap
+#     )
+#     docs = text_splitter.create_documents([report_text])
+# 
+#     embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
+#     vectors = np.array(embeddings.embed_documents([x.page_content for x in docs]))
+# 
+#     kmeans = KMeans(n_clusters=num_clusters, random_state=97).fit(vectors)
+#     return docs, vectors, kmeans
+# 
+# # Process and cluster the 2023 report
+# docs_2023, vectors_2023, kmeans_2023 = process_and_cluster_report(
+#     report_text=report_2023,
+#     openai_api_key=OPENAI_API_KEY,
+#     num_clusters=10  # Remember to change between testing and implementation
+# )
+# 
+# # Process and cluster other reports
+# docs_other, vectors_other, kmeans_other = process_and_cluster_report(
+#     report_text=other_reports,
+#     openai_api_key=OPENAI_API_KEY,
+#     num_clusters=150  # Remember to change between testing and implementation
+# )</code></pre>
+<pre class="python"><code>
+# # Function to find the centroid embeddigns
+# def find_closest_embeddings(vectors, kmeans):
+#     &quot;&quot;&quot;
+#     Finds the closest embeddings to the centroids of the clusters.
+# 
+#     Args:
+#         vectors (numpy.ndarray): Array of embeddings.
+#         kmeans (KMeans): Fitted KMeans model.
+# 
+#     Returns:
+#         list: Sorted indices of the closest points to each cluster centroid.
+#     &quot;&quot;&quot;
+#     closest_indices = []
+#     for i in range(kmeans.n_clusters):
+#         distances = np.linalg.norm(vectors - kmeans.cluster_centers_[i], axis=1)
+#         closest_index = np.argmin(distances)
+#         closest_indices.append(closest_index)
+#     return sorted(closest_indices)
+#   
+#   
+# # Find the centroid embeddings
+# selected_indices_2023 = find_closest_embeddings(vectors_2023, kmeans_2023)
+# selected_indices_other = find_closest_embeddings(vectors_other, kmeans_other)
+  </code></pre>
+<pre class="python"><code>
+# ## Use prompt template
+# 
+# from langchain import PromptTemplate
+# 
+# def summarize_chunks(docs, selected_indices, llm):
+#     &quot;&quot;&quot;
+#     Summarizes selected chunks of a report.
+# 
+#     Args:
+#         docs (list): List of document chunks.
+#         selected_indices (list): Indices of selected chunks.
+#         llm: Language model for summarization.
+# 
+#     Returns:
+#         list: List of summaries for each selected chunk.
+#     &quot;&quot;&quot;
+#     from langchain import PromptTemplate
+#     from langchain.chains.summarize import load_summarize_chain
+# 
+#     map_prompt = &quot;&quot;&quot;You will be given a single passage of one of Amazon&#39;s annual reports. This section will be enclosed in triple backticks (```)
+#     Your goal is to give a summary of the key theme(s) from this section. Your response should be one to two sentences.
+#     ```{text}``` Summary of Key Themes:&quot;&quot;&quot;
+# 
+#     map_prompt_template = PromptTemplate(template=map_prompt, input_variables=[&quot;text&quot;])
+# 
+#     map_chain = load_summarize_chain(
+#         llm=llm,
+#         chain_type=&quot;stuff&quot;,
+#         prompt=map_prompt_template
+#     )
+# 
+#     summary_list = []
+#     selected_docs = [docs[doc] for doc in selected_indices]
+#     for i, doc in enumerate(selected_docs):
+#         chunk_summary = map_chain.run([doc])
+#         summary_list.append(chunk_summary)
+# 
+#         # Print only the first two chunk summaries as examples
+#         if i &lt; 2:
+#             print(f&quot;Summary #{i + 1} (chunk #{selected_indices[i]}) - Preview: {chunk_summary[:250]} \n&quot;)
+# 
+#     return summary_list
+# 
+# 
+# 
+# # Summarize chunks
+# summary_2023 = summarize_chunks(docs_2023, selected_indices_2023, llm)
+# summary_other = summarize_chunks(docs_other, selected_indices_other, llm)
+# 
+# # Save summaries so we don&#39;t have to call the API every time we run
+# import json
+# import os
+
+
+# Save summaries to the folder
+file_path = os.path.join(folder_path, &quot;summaries.json&quot;) # Folder path hidden
+# with open(file_path, &quot;w&quot;) as f:
+#     json.dump({&quot;summary_2023&quot;: summary_2023, &quot;summary_other&quot;: summary_other}, f)
+
+# Access the summaries
+with open(file_path, &quot;r&quot;) as f:
+    loaded_summaries = json.load(f)
+
+summary_2023 = loaded_summaries[&quot;summary_2023&quot;]
+summary_other = loaded_summaries[&quot;summary_other&quot;]</code></pre>
+<p>Here is the overall summary.</p>
+<pre class="python"><code>
+# def summarize_report_summaries(summary_list, llm):
+#     &quot;&quot;&quot;
+#     Generates a verbose summary from a list of summaries for a report or set of reports.
+# 
+#     Args:
+#         summary_list (list): A list of summaries for the report(s).
+#         llm (LangChainModel): A language model instance for summarization.
+# 
+#     Returns:
+#         str: A verbose summary of the provided summaries.
+#     &quot;&quot;&quot;
+#     # Combine all summaries into one string
+#     combined_summaries = &quot;\n&quot;.join(summary_list)
+# 
+#     # Wrap the combined summaries into a Document
+#     summaries_document = Document(page_content=combined_summaries)
+# 
+#     # Print the token count for debugging
+#     total_tokens = llm.get_num_tokens(summaries_document.page_content)
+#     print(f&quot;Combined summaries contain {total_tokens} tokens.&quot;)
+# 
+#     # Define the prompt for summarizing summaries
+#     combine_prompt = &quot;&quot;&quot;
+#     You will be given a series of summaries from one annual report or a group of annual reports from the company Amazon.
+#     The summaries will be enclosed in triple backticks (```). Your goal is to give a verbose summary of the
+#     key themes of the annual report(s). Please write the summary in one to two paragraphs.
+# 
+#     ```{text}```
+#     SUMMARY:
+#     &quot;&quot;&quot;
+#     combine_prompt_template = PromptTemplate(template=combine_prompt, input_variables=[&quot;text&quot;])
+# 
+#     # Create the summarization chain
+#     reduce_chain = load_summarize_chain(
+#         llm=llm,
+#         chain_type=&quot;stuff&quot;,
+#         prompt=combine_prompt_template,
+#     )
+# 
+#     # Generate the verbose summary
+#     verbose_summary = reduce_chain.run([summaries_document])
+# 
+#     # Print and return the verbose summary
+#     print(verbose_summary)
+#     return verbose_summary
+# 
+# # Generate a verbose summary for report_2023
+# complete_summary_2023 = summarize_report_summaries(summary_list=summary_2023, llm=llm)
+
+
+
+# Save summaries to the folder
+file_path = os.path.join(folder_path, &quot;complete_summary_2023.json&quot;) # Folder path hidden
+# with open(file_path, &quot;w&quot;) as f:
+#     json.dump({&quot;complete_summary_2023&quot;: complete_summary_2023},f)
+
+# Load the complete summary back into Python
+with open(file_path, &quot;r&quot;) as f:
+    loaded_data = json.load(f)
+
+# Access the summary
+complete_summary_2023 = loaded_data[&quot;complete_summary_2023&quot;]</code></pre>
+<p>While this is definitely cool, and would have blown my mind just a
+few years ago, it doesn’t really tell us how the 2023 annual report
+compares to the other annual reports like the tf-idf statistics did.
+Perhaps these are the key themes that the LLM would grab from any of the
+annual reports.</p>
+</div>
+<div id="comparing-the-2023-annual-report-to-others-with-an-llm"
+class="section level3">
+<h3>Comparing the 2023 Annual Report to Others with an LLM</h3>
+<p>I have not found an established method to compare a document to
+others in a corpus of documents using an LLM. Therefore, in this section
+I am just exploring procedures that I have come up with myself. I do not
+proclaim these to be the best methods to use, and in my opinion the
+results leave some obvious room for improvement. I would love to hear
+feedback about how this process could be improved.</p>
+<p>As an initial attempt, I use the following process that leverages the
+summaries I already made earlier.</p>
+<ol style="list-style-type: decimal">
+<li>Use summarization process above to get a summary of the key themes
+from the 2023 report (target document)</li>
+<li>Use the summarization process above to get a summary of the key
+themes from the other reports (other documents in our corpus)</li>
+<li>Prompt the LLM to compare the summaries to identify what makes the
+target document unique among the corpus.</li>
+</ol>
+<p>Below is the LLM’s output.</p>
+<pre class="python"><code># def compare_reports(target_summary, other_summaries, llm):
+#     &quot;&quot;&quot;
+#     Compares the target report summary to other report summaries to identify unique themes.
+# 
+#     Args:
+#         target_summary (str): Summary of the target report.
+#         other_summaries (list): Summaries of other reports.
+#         llm: Language model for comparison.
+# 
+#     Returns:
+#         str: A summary describing how the target report differs from others.
+#     &quot;&quot;&quot;
+#     from langchain.chains import LLMChain
+#     from langchain.prompts import PromptTemplate
+# 
+#     compare_prompt = &quot;&quot;&quot;You will be provided with a target summary and summaries of other reports.
+#     Compare the target summary to the others and identify what makes it unique. Provide your answer in three to four sentences.
+#     Target Summary: {target_summary}
+#     Other Summaries: {other_summaries}
+#     Key Differences:&quot;&quot;&quot;
+# 
+#     compare_prompt_template = PromptTemplate(
+#         template=compare_prompt,
+#         input_variables=[&quot;target_summary&quot;, &quot;other_summaries&quot;]
+#     )
+# 
+#     compare_chain = LLMChain(llm=llm, prompt=compare_prompt_template)
+#     result = compare_chain.run(
+#         {&quot;target_summary&quot;: target_summary, &quot;other_summaries&quot;: &quot; &quot;.join(other_summaries)}
+#     )
+#     return result
+# 
+# 
+# # Compare summaries
+# comparison_result = compare_reports(
+#     target_summary=&quot; &quot;.join(summary_2023),
+#     other_summaries=summary_other,
+#     llm=llm
+# )
+
+
+
+# Save summaries to the folder
+file_path = os.path.join(folder_path, &quot;comparison_result.json&quot;) # folder path hidden
+# with open(file_path, &quot;w&quot;) as f:
+#     json.dump({&quot;comparison_result&quot;: comparison_result},f)
+
+# Load the complete summary back into Python
+with open(file_path, &quot;r&quot;) as f:
+    loaded_data = json.load(f)
+
+# Access the summary
+comparison_result = loaded_data[&quot;comparison_result&quot;]
+
+
+print(comparison_result)</code></pre>
+<pre><code>## The target summary is unique in its comprehensive coverage of Amazon&#39;s financial growth, operational strategies, and the multifaceted challenges it faces in 2023. It emphasizes not only the company&#39;s revenue increases and innovations in customer experience but also delves into specific aspects such as the development of &quot;fulfillment primitives,&quot; investments in generative AI, and the importance of human capital. Additionally, it highlights a range of risks, including legal challenges and complexities in financial management, which are less detailed in the other summaries. Overall, the target summary presents a more nuanced and detailed analysis of Amazon&#39;s strategic focus and operational landscape compared to the other summaries, which tend to be more general or focused on specific themes.</code></pre>
+<p>Although these results are a little bland, they are a start.</p>
+<div id="augmenting-the-llm-with-the-top-tf-idf-terms"
+class="section level4">
+<h4>Augmenting The LLM With The Top TF-IDF Terms</h4>
+<p>A second option that I came up with involves augmenting our LLM
+prompt with some of the results from our traditional text mining
+methods. I augment the LLM approach above by also feeding the LLM the
+top tf-idf terms from the target document. Below is the LLM’s
+output.</p>
+<pre class="r"><code># Get R df of top 10 tf_idf terms that appear at least 12 times from 2023
+top_tf_idf_2023 &lt;- tf_idf_2023 |&gt;
+  ungroup() |&gt;
+  filter(word_count &gt;= 12) |&gt;
+  arrange(desc(tf_idf)) |&gt;
+  slice_head(n = 10) |&gt;
+  select(word)
+
+reticulate::r_to_py(top_tf_idf_2023)</code></pre>
+<pre class="python"><code># top_tf_idf_2023 = &#39; &#39;.join(r.top_tf_idf_2023[&#39;word&#39;])
+# 
+# def compare_reports_with_top_tfidf(target_summary, other_summaries, top_tfidf_terms, llm):
+#     &quot;&quot;&quot;
+#     Compares the target report summary to other report summaries, using precomputed top TF-IDF terms.
+# 
+#     Args:
+#         target_summary (str): Summary of the target report.
+#         other_summaries (list): Summaries of other reports.
+#         top_tfidf_terms (list): List of top TF-IDF terms for the target report.
+#         llm: Language model for comparison.
+# 
+#     Returns:
+#         str: A summary describing how the target report differs from others.
+#     &quot;&quot;&quot;
+#     from langchain.chains import LLMChain
+#     from langchain.prompts import PromptTemplate
+# 
+#     # Integrate unique terms into the LLM prompt
+#     compare_prompt = &quot;&quot;&quot;You will be provided with three inputs: A summary of key themes from a target report. Key Terms that are used more frequently in the target report than
+#     the others. And summaries of key themes from the other reports in the corpus. 
+#     
+#     Identify what makes the target report unique by comparing the summary of key themes from the target document to the summaries of key themes
+#     from the other documents, and taking into consideration the key terms provided. Give your answer in four to six sentences.
+#     
+#     Target Summary: {target_summary}
+#     Key Terms : {unique_terms}
+#     Other Summaries: {other_summaries}
+#     Key Differences:&quot;&quot;&quot;
+# 
+#     compare_prompt_template = PromptTemplate(
+#         template=compare_prompt,
+#         input_variables=[&quot;target_summary&quot;, &quot;unique_terms&quot;, &quot;other_summaries&quot;]
+#     )
+# 
+#     compare_chain = LLMChain(llm=llm, prompt=compare_prompt_template)
+#     result = compare_chain.run(
+#         {
+#             &quot;target_summary&quot;: target_summary,
+#             &quot;unique_terms&quot;: &quot;, &quot;.join(top_tfidf_terms),
+#             &quot;other_summaries&quot;: &quot; &quot;.join(other_summaries),
+#         }
+#     )
+#     return result
+# 
+# 
+# # Assuming `r.top_tf_idf_2023` contains the top TF-IDF terms as a list
+# comparison_result_tf_idf = compare_reports_with_top_tfidf(
+#     target_summary=&quot; &quot;.join(summary_2023),
+#     other_summaries=summary_other,
+#     top_tfidf_terms=top_tf_idf_2023,
+#     llm=llm
+# )
+
+
+
+# Save summaries to the folder
+file_path = os.path.join(folder_path, &quot;comparison_result_tf_idf.json&quot;) # Folder path hidden
+# with open(file_path, &quot;w&quot;) as f:
+#     json.dump({&quot;comparison_result_tf_idf&quot;: comparison_result_tf_idf},f)
+
+# Load the complete summary back into Python
+with open(file_path, &quot;r&quot;) as f:
+    loaded_data = json.load(f)
+
+# Access the summary
+comparison_result_tf_idf = loaded_data[&quot;comparison_result_tf_idf&quot;]
+
+
+print(comparison_result_tf_idf)</code></pre>
+<pre><code>## The target report stands out from the other summaries primarily due to its comprehensive focus on Amazon&#39;s financial growth in 2023, emphasizing specific metrics such as revenue increases across various segments and the complexities of financial management, including tax regulations and cash flow dynamics. Unlike the other reports, which generally highlight Amazon&#39;s commitment to innovation and customer satisfaction, the target report delves deeper into operational strategies, such as the development of &quot;fulfillment primitives&quot; and investments in generative AI, showcasing a more nuanced understanding of how these elements contribute to Amazon&#39;s competitive edge.
+## 
+## Additionally, the target report uniquely addresses the importance of human capital, detailing Amazon&#39;s strategies for employee development, safety, and engagement, which are less emphasized in the other summaries. It also highlights specific risks related to legal claims and operational inefficiencies, providing a more detailed risk assessment that is not as prevalent in the other reports. Overall, the target report presents a more intricate and multifaceted view of Amazon&#39;s current operational landscape, financial health, and strategic priorities, setting it apart from the broader themes discussed in the other documents.</code></pre>
+<p>These give us a better idea of how the 2023 report is unique compared
+to the other reports in the corpus.</p>
+<p>I feel that I may have bitten off more than I can chew in this single
+little write up with this part, so I will not dive too far down this
+particular rabbit hole here. Again, my goal with this section was to
+learn and share what I learned. I am keen to keep working on this sort
+of problem and, should time permit, I plan to come back to this and make
+a future post about more robust approaches.</p>
+</div>
+</div>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
